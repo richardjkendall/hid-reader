@@ -4,6 +4,7 @@ import Queue
 import logging
 import serial
 import sys
+import re
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(levelname)s] (%(threadName)-10s) %(message)s')
 
@@ -26,6 +27,26 @@ class HandleHIDCode(threading.Thread):
 
 	def process_hid_code(self, hid_code):
 		logging.info("Processing HID code '{msg}'".format(msg=hid_code))
+		p = re.compile("\[(\d+),([A-Fa-z0-9]+)\]")
+		m = p.match(hid_code)
+		number_of_bits = m.group(1)
+		card_data = m.group(2)
+		logging.info("Number of bits on card = {bits}, card data = '{data}'".format(bits=number_of_bits, data=card_data))
+		if(int(number_of_bits) == 26):
+			logging.info("This is a 26-bit HID card")
+			self.process_26bit_card(card_data)
+	
+	def process_26bit_card(self, hid_code):
+		logging.info("Processing 26 bit card")
+		hid_number = int(hid_code, 16)
+		logging.info("Card number in decimal is '{num}'".format(num=hid_number))
+		facility_code_mask = int("1111111100000000000000000", 2)
+		card_code_mask     = int("0000000011111111111111110", 2)
+		facility_code = hid_number & facility_code_mask
+		facility_code = facility_code >> 17
+		card_code = hid_number & card_code_mask
+		card_code = card_code >> 1
+		logging.info("Facility code = {fc}, card code = {cc}".format(fc=facility_code, cc=card_code))
 
         def join(self, timeout=None):
                 logging.info("Setting exit flag")
