@@ -33,8 +33,11 @@ class HandleHIDCode(threading.Thread):
 		card_data = m.group(2)
 		logging.info("Number of bits on card = {bits}, card data = '{data}'".format(bits=number_of_bits, data=card_data))
 		if(int(number_of_bits) == 26):
-			logging.info("This is a 26-bit HID card")
+			logging.info("This is a 26-bit HID card, the standard open format")
 			self.process_26bit_card(card_data)
+		if(int(number_of_bits) == 35):
+			logging.info("This is a 35-bit HID card, the Corporate 1000 format")
+			self.process_35bit_card(card_data)
 	
 	def process_26bit_card(self, hid_code):
 		logging.info("Processing 26 bit card")
@@ -47,6 +50,19 @@ class HandleHIDCode(threading.Thread):
 		card_code = hid_number & card_code_mask
 		card_code = card_code >> 1
 		logging.info("Facility code = {fc}, card code = {cc}".format(fc=facility_code, cc=card_code))
+
+	def process_35bit_card(self, hid_code):
+		logging.info("Processing 35 bit card")
+		hid_number = int(hid_code, 16)
+                logging.info("Card number in decimal is '{num}'".format(num=hid_number))
+		facility_code_mask = int("11111111111000000000000000000000", 2)
+                card_code_mask     = int("00000000000111111111111111111110", 2)
+		facility_code = hid_number & facility_code_mask  
+                facility_code = facility_code >> 21
+                card_code = hid_number & card_code_mask
+		card_code = card_code >> 1
+                logging.info("Facility code = {fc}, card code = {cc}".format(fc=facility_code, cc=card_code))
+
 
         def join(self, timeout=None):
                 logging.info("Setting exit flag")
